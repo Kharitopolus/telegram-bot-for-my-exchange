@@ -1,5 +1,5 @@
-from websocket import create_connection
-from websocket._exceptions import WebSocketBadStatusException
+from websocket import create_connection  # type: ignore
+from websocket._exceptions import WebSocketBadStatusException  # type: ignore
 from aiogram.types import Message
 
 

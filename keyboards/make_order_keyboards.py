@@ -3,8 +3,8 @@ from lexicon.lexicon import LEXICON
 
 
 def yes_no_keyboard() -> InlineKeyboardMarkup:
-    yes = InlineKeyboardButton(text=LEXICON["yes"], callback_data='1')
-    no = InlineKeyboardButton(text=LEXICON["no"], callback_data='0')
+    yes = InlineKeyboardButton(text=LEXICON["yes"], callback_data="1")
+    no = InlineKeyboardButton(text=LEXICON["no"], callback_data="0")
     keyboard: list[list[InlineKeyboardButton]] = [[yes, no]]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 

@@ -1,4 +1,4 @@
-from websockets.legacy.client import connect
+from websockets.legacy.client import connect  # type: ignore
 from aiogram import Router
 from aiogram.filters import Command, CommandObject
 from keyboards.del_kb import del_keyboard
@@ -15,7 +15,7 @@ router: Router = Router()
                 lambda msg: len(msg.text.split()) == 2)
 async def view_quote(message: Message, bot: Bot, command: CommandObject):
     await message.delete()
-    instrument = command.args or ''
+    instrument = command.args or ""
 
     if not instrument_supported(instrument):
         await message.answer(

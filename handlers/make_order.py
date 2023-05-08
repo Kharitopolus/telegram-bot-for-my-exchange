@@ -1,5 +1,5 @@
 import json
-from websocket import create_connection
+from websocket import create_connection  # type: ignore
 from aiogram import Router, F
 from aiogram.filters import Command, Text
 from database.database import tokens_db
@@ -27,7 +27,9 @@ class FSMMakeOrder(StatesGroup):
     confirm = State()
 
 
-@router.message(Command(commands="make_order"), F.from_user.id.in_(set(tokens_db.keys())))
+@router.message(
+    Command(commands="make_order"), F.from_user.id.in_(set(tokens_db.keys()))
+)
 async def start_make_order_form(message: Message, state: FSMContext):
     await message.delete()
     msg = await message.answer(text=LEXICON["fill_instrument"])
@@ -63,8 +65,8 @@ async def fill_instrument(message: Message, bot: Bot, state: FSMContext):
 
 
 @router.message(StateFilter(FSMMakeOrder.fill_instrument))
-async def instrument_not_supported(message: Message,
-                                   bot: Bot, state: FSMContext):
+async def instrument_not_supported(message: Message, bot: Bot,
+                                   state: FSMContext):
     await message.delete()
     text = LEXICON["instrument_not_supported"]
     order = await state.get_data()
@@ -154,7 +156,7 @@ async def sending_an_order(callback: CallbackQuery, state: FSMContext):
         order = await state.get_data()
         del order["form_msg_id"]
         del order["chat_id"]
-        instrument = order['instrument']
+        instrument = order["instrument"]
         ws = create_connection(
             f"ws://127.0.0.1:8000/ws/orderbox/{instrument}/?token={token}"
         )
