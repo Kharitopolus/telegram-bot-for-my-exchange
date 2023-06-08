@@ -5,25 +5,33 @@ from websocket._exceptions import WebSocketBadStatusException  # type: ignore
 from aiogram.types import Message
 from websockets.legacy.client import connect  # type: ignore
 from websockets.legacy.client import WebSocketClientProtocol  # type: ignore
+from config_data.config import MyExchange, load_my_exchange_api_config
 from database.database import tokens_db
 from services.pretty_look import quote_pretty
+
+config: MyExchange = load_my_exchange_api_config()
+
+HOST = config.HOST
+GET_QUOTE_URL = config.get_quote
+SEND_ORDER_URL = config.send_order
+LOGIN_URL = config.login
 
 
 def is_instrument_supported(instrument: Message | str | None) -> bool:
     if type(instrument) is Message:
         instrument = instrument.text
-    quote_url = f"ws://127.0.0.1:8000/ws/orderbox/{instrument}/"
+    get_quote_url = GET_QUOTE_URL.format(HOST=HOST, instrument=instrument)
     try:
-        ws = create_connection(quote_url)
+        ws = create_connection(get_quote_url)
         ws.close()
     except WebSocketBadStatusException:
         return False
     return True
 
 
-def quote_connect(instrument) -> WebSocketClientProtocol:
-    quote_url = f"ws://127.0.0.1:8000/ws/orderbox/{instrument}/"
-    quote_endpoint = connect(quote_url)
+def quote_connect(instrument):
+    get_quote_url = GET_QUOTE_URL.format(HOST=HOST, instrument=instrument)
+    quote_endpoint = connect(get_quote_url)
     return quote_endpoint
 
 
@@ -37,9 +45,9 @@ async def get_quote(quote_endpoint: WebSocketClientProtocol,
 def log_in(state_data):
     username = state_data["username"]
     password = state_data["password"]
-    login_url = "http://127.0.0.1:8000/token/login/"
     response_json = requests.post(
-        login_url, data={"username": username, "password": password}
+        LOGIN_URL.format(HOST=HOST),
+        data={"username": username, "password": password}
     )
     response = json.loads(response_json.text)
 
@@ -64,9 +72,11 @@ def send_order(state_data):
 
     instrument = state_data["instrument"]
     token = tokens_db[state_data["user_id"]]
-    quote_url = f"ws://127.0.0.1:8000/ws/orderbox/{instrument}/?token={token}"
-    quote_endpoint = create_connection(quote_url)
+    send_order_url = SEND_ORDER_URL.format(HOST=HOST,
+                                           instrument=instrument,
+                                           token=token)
+    send_order_endpoint = create_connection(send_order_url)
 
     order_json = json.dumps(order)
-    quote_endpoint.send(order_json)
-    quote_endpoint.close()
+    send_order_endpoint.send(order_json)
+    send_order_endpoint.close()

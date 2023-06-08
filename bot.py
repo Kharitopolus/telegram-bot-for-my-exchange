@@ -1,6 +1,6 @@
 import asyncio
 from aiogram import Bot, Dispatcher
-from config_data.config import Config, load_config
+from config_data.config import load_tg_bot_config, TgBot
 from handlers import (
     login,
     take_order,
@@ -13,8 +13,8 @@ from keyboards.main_menu import set_main_menu
 
 
 async def main():
-    config: Config = load_config()
-    bot: Bot = Bot(token=config.tg_bot.token)
+    config: TgBot = load_tg_bot_config()
+    bot: Bot = Bot(token=config.token)
     dp: Dispatcher = Dispatcher()
     await set_main_menu(bot)
     dp.include_router(del_messsage.router)
