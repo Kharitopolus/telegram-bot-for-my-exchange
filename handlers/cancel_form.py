@@ -4,7 +4,7 @@ from aiogram.fsm.state import default_state
 from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram import Router
-from keyboards.del_kb import del_keyboard
+from keyboards.del_kb import delete_message_button
 from lexicon.lexicon import LEXICON
 
 router: Router = Router()
@@ -13,5 +13,6 @@ router: Router = Router()
 @router.message(Command(commands="cancel"), ~StateFilter(default_state))
 async def process_cancel_command_state(message: Message, state: FSMContext):
     await message.delete()
-    await message.answer(text=LEXICON["cancel"], reply_markup=del_keyboard())
+    await message.answer(text=LEXICON["cancel"],
+                         reply_markup=delete_message_button())
     await state.clear()

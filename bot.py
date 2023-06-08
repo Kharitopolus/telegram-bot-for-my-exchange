@@ -3,7 +3,7 @@ from aiogram import Bot, Dispatcher
 from config_data.config import Config, load_config
 from handlers import (
     login,
-    make_order,
+    take_order,
     quote,
     del_messsage,
     cancel_form,
@@ -21,7 +21,7 @@ async def main():
     dp.include_router(quote.router)
     dp.include_router(cancel_form.router)
     dp.include_router(login.router)
-    dp.include_router(make_order.router)
+    dp.include_router(take_order.router)
     dp.include_router(unforeseen_action.router)
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)

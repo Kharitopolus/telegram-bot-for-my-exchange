@@ -1,10 +1,8 @@
-import json
-import requests  # type: ignore
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
-from database.database import tokens_db
-from keyboards.del_kb import del_keyboard
+from external_services import my_exchange
+from keyboards.del_kb import delete_message_button
 from lexicon.lexicon import LEXICON
 from aiogram.filters.state import State, StatesGroup, StateFilter
 from aiogram.fsm.context import FSMContext
@@ -22,9 +20,21 @@ class FSMLogin(StatesGroup):
 @router.message(Command(commands="login"), StateFilter(default_state))
 async def process_login_command(message: Message, state: FSMContext):
     await message.delete()
-    msg = await message.answer(text=LEXICON["fill_username"])
-    form_msg_id, chat_id = msg.message_id, msg.chat.id
-    await state.update_data(form_msg_id=form_msg_id, chat_id=chat_id)
+    user_interface_message = \
+        await message.answer(text=LEXICON["fill_username"])
+    user_interface_message_id = user_interface_message.message_id
+    chat_id = user_interface_message.chat.id
+
+    # Опять таки беспочвенный докоп mypy что
+    #  Item "None" of "Optional[User]" has no attribute "id"
+    if message.from_user is None:
+        raise ValueError
+
+    await state.update_data(
+        user_interface_message_id=user_interface_message_id,
+        chat_id=chat_id,
+        user_id=message.from_user.id,
+    )
     await state.set_state(FSMLogin.fill_username)
 
 
@@ -32,45 +42,37 @@ async def process_login_command(message: Message, state: FSMContext):
 async def process_username_sent(message: Message, bot: Bot, state: FSMContext):
     await state.update_data(username=message.text)
     await message.delete()
-    text = LEXICON["fill_password"]
-    order = await state.get_data()
-    form_msg_id = order["form_msg_id"]
-    chat_id = order["chat_id"]
-    await bot.edit_message_text(text=text,
-                                chat_id=chat_id,
-                                message_id=form_msg_id)
+    state_data = await state.get_data()
+    await bot.edit_message_text(
+        text=LEXICON["fill_password"],
+        chat_id=state_data["chat_id"],
+        message_id=state_data["user_interface_message_id"],
+    )
     await state.set_state(FSMLogin.fill_password)
 
 
 @router.message(StateFilter(FSMLogin.fill_password))
-async def process_password_sent(message: Message, bot: Bot, state: FSMContext):
+async def process_password_sent_and_login(
+    message: Message, bot: Bot, state: FSMContext
+):
     await state.update_data(password=message.text)
     await message.delete()
     state_data = await state.get_data()
     await state.clear()
-    r = requests.post(
-        "http://127.0.0.1:8000/token/login/",
-        data={"username": state_data["username"],
-              "password": state_data["password"]},
-    )
-    response_json = json.loads(r.text)
-    form_msg_id = state_data["form_msg_id"]
-    chat_id = state_data["chat_id"]
-    if "auth_token" not in response_json:
+    await state.set_state(default_state)
+
+    if not my_exchange.log_in(state_data):
         await bot.edit_message_text(
             text=LEXICON["wrong_credentials"],
-            chat_id=chat_id,
-            message_id=form_msg_id,
-            reply_markup=del_keyboard(),
+            chat_id=state_data["chat_id"],
+            message_id=state_data["user_interface_message_id"],
+            reply_markup=delete_message_button(),
         )
         return
-    token = response_json["auth_token"]
-    if not message.from_user:
-        raise ValueError
-    tokens_db[message.from_user.id] = token
-    text = LEXICON["logged_in"]
+
     await bot.edit_message_text(
-        text=text, chat_id=chat_id, message_id=form_msg_id,
-        reply_markup=del_keyboard()
+        text=LEXICON["log_in_successfully"],
+        chat_id=state_data["chat_id"],
+        message_id=state_data["user_interface_message_id"],
+        reply_markup=delete_message_button(),
     )
-    await state.set_state(default_state)
