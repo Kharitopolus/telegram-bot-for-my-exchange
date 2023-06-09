@@ -7,7 +7,7 @@ from websockets.legacy.client import connect  # type: ignore
 from websockets.legacy.client import WebSocketClientProtocol  # type: ignore
 from config_data.config import MyExchange, load_my_exchange_api_config
 from database.database import tokens_db
-from services.pretty_look import quote_pretty
+from services.pydantic_models import Quote, Order
 
 config: MyExchange = load_my_exchange_api_config()
 
@@ -38,7 +38,9 @@ def quote_connect(instrument):
 async def get_quote(quote_endpoint: WebSocketClientProtocol,
                     instrument: str) -> str:
     current_quote_json = await quote_endpoint.recv()
-    current_quote = quote_pretty(current_quote_json, instrument)
+    # current_quote = quote_pretty(current_quote_json, instrument)
+    order = Quote.parse_raw(current_quote_json)
+    current_quote = str(order)
     return current_quote
 
 
@@ -64,12 +66,6 @@ def log_in(state_data):
 
 
 def send_order(state_data):
-    order = dict()
-    order["instrument"] = state_data["instrument"]
-    order["side_of_deal"] = state_data["side_of_deal"]
-    order["price"] = state_data["price"]
-    order["amount"] = state_data["amount"]
-
     instrument = state_data["instrument"]
     token = tokens_db[state_data["user_id"]]
     send_order_url = SEND_ORDER_URL.format(HOST=HOST,
@@ -77,6 +73,6 @@ def send_order(state_data):
                                            token=token)
     send_order_endpoint = create_connection(send_order_url)
 
-    order_json = json.dumps(order)
-    send_order_endpoint.send(order_json)
+    order = Order(**state_data)
+    send_order_endpoint.send(order.json())
     send_order_endpoint.close()

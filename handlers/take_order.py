@@ -11,7 +11,7 @@ from aiogram.fsm.state import default_state
 from aiogram.types import CallbackQuery, Message
 from aiogram import Bot
 from external_services import my_exchange
-from services.pretty_look import order_pretty
+from services.pydantic_models import Order
 
 router: Router = Router()
 
@@ -53,8 +53,8 @@ async def user_dont_login(message: Message, state: FSMContext):
 
 
 @router.message(
-    my_exchange.is_instrument_supported,
-    StateFilter(FSMTakeOrder.fill_instrument)
+    StateFilter(FSMTakeOrder.fill_instrument),
+    my_exchange.is_instrument_supported
 )
 async def fill_instrument(message: Message, bot: Bot, state: FSMContext):
     await state.update_data(instrument=message.text)
@@ -132,7 +132,7 @@ async def fill_amount(message: Message, bot: Bot, state: FSMContext):
     await state.set_state(FSMTakeOrder.confirm_order)
     state_data = await state.get_data()
     await bot.edit_message_text(
-        text=LEXICON["confirm_order_?"] + "\n\n" + order_pretty(state_data),
+        text=LEXICON["confirm_order_?"] + "\n\n" + str(Order(**state_data)),
         chat_id=state_data["chat_id"],
         message_id=state_data["user_interface_message_id"],
         reply_markup=order_confirm_keyboard(),
