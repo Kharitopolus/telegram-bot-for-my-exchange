@@ -35,12 +35,9 @@ def quote_connect(instrument):
     return quote_endpoint
 
 
-async def get_quote(quote_endpoint: WebSocketClientProtocol,
-                    instrument: str) -> str:
+async def get_quote(quote_endpoint: WebSocketClientProtocol) -> str:
     current_quote_json = await quote_endpoint.recv()
-    # current_quote = quote_pretty(current_quote_json, instrument)
-    order = Quote.parse_raw(current_quote_json)
-    current_quote = str(order)
+    current_quote = str(Quote.parse_raw(current_quote_json))
     return current_quote
 
 

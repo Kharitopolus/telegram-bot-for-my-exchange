@@ -27,14 +27,14 @@ async def view_quote(message: Message, bot: Bot, command: CommandObject):
         return
 
     async with my_exchange.quote_connect(instrument) as quote_endpoint:
-        current_quote = await my_exchange.get_quote(quote_endpoint, instrument)
+        current_quote = await my_exchange.get_quote(quote_endpoint)
         quotation_board = await message.answer(
             text=current_quote, reply_markup=delete_message_button()
         )
 
         while quotation_board:
             current_quote = \
-                await my_exchange.get_quote(quote_endpoint, instrument)
+                await my_exchange.get_quote(quote_endpoint)
             if quotation_board.text != current_quote:
                 try:
                     quotation_board = await bot.edit_message_text(
