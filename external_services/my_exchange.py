@@ -59,7 +59,7 @@ def log_in(state_data):
     if "auth_token" in response:
         token = response["auth_token"]
         user_id = state_data["user_id"]
-        tokens_db[user_id] = token
+        tokens_db.set(user_id, token)
         log_in_status = True
 
     return log_in_status
@@ -67,7 +67,8 @@ def log_in(state_data):
 
 def send_order(state_data):
     instrument = state_data["instrument"]
-    token = tokens_db[state_data["user_id"]]
+    user_id = state_data["user_id"]
+    token = tokens_db.get(user_id).decode()
     send_order_url = SEND_ORDER_URL.format(HOST=HOST,
                                            instrument=instrument,
                                            token=token)
